@@ -1,41 +1,113 @@
 import 'package:flutter/material.dart';
-import '../models/movie.dart';
-import '../services/favorite_service.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../models/news.dart';
+import '../services/bookmark_service.dart';
 
 class DetailScreen extends StatelessWidget {
-  final Movie movie;
+  final News news;
 
-  const DetailScreen({super.key, required this.movie});
+  const DetailScreen({super.key, required this.news});
 
-  void _toggleFavorite(BuildContext context) async {
-    final isNowFav = await FavoriteService.toggleFavorite(movie);
+  // Membuka artikel asli di browser
+  Future<void> _openFullArticle(BuildContext context) async {
+    final rawUrl = news.url.trim();
+    if (rawUrl.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('URL artikel tidak tersedia'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final Uri? uri = Uri.tryParse(rawUrl);
+    if (uri == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Format URL tidak valid'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+
+      if (!launched && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tidak dapat membuka link artikel di browser'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal membuka browser: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // Toggle bookmark dengan SnackBar Hijau (tambah) dan Merah (hapus)
+  void _toggleBookmark(BuildContext context) async {
+    final isNowBookmarked = await BookmarkService.toggleBookmark(news);
 
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(
-              isNowFav ? Icons.favorite : Icons.favorite_border,
-              color: isNowFav ? Colors.red : Colors.white,
-              size: 20,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                isNowFav
-                    ? '${movie.title} ditambahkan ke favorit'
-                    : '${movie.title} dihapus dari favorit',
+
+    if (isNowBookmarked) {
+      // Snackbar Hijau saat menambahkan bookmark
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Berita berhasil ditambahkan ke bookmark',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
+          backgroundColor: Colors.green[700],
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
         ),
-        backgroundColor: const Color(0xFF1E2433),
-        duration: const Duration(seconds: 1),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+      );
+    } else {
+      // Snackbar Merah saat menghapus bookmark
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.remove_circle_outline_rounded, color: Colors.white, size: 20),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Berita berhasil dihapus dari bookmark',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.red[700],
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   @override
@@ -45,224 +117,223 @@ class DetailScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFF1A1F2C),
         elevation: 0,
-        title: Text(
-          movie.title,
-          style: const TextStyle(fontSize: 16, color: Colors.white),
+        title: const Text(
+          'Detail Berita',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-        foregroundColor: Colors.white,
         actions: [
-          ValueListenableBuilder<Set<String>>(
-            valueListenable: FavoriteService.favoriteIdsNotifier,
-            builder: (context, favIds, _) {
-              final isFav = favIds.contains(movie.id);
+          // Tombol bookmark di AppBar
+          ValueListenableBuilder<Set<int>>(
+            valueListenable: BookmarkService.bookmarkIdsNotifier,
+            builder: (context, bookmarkIds, _) {
+              final isBookmarked = bookmarkIds.contains(news.id);
+
               return IconButton(
+                tooltip: isBookmarked ? 'Hapus Bookmark' : 'Tambah Bookmark',
                 icon: Icon(
-                  isFav ? Icons.favorite : Icons.favorite_border,
-                  color: isFav ? Colors.red : Colors.white70,
+                  isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                  color: isBookmarked ? Colors.amber : Colors.white70,
+                  size: 26,
                 ),
-                onPressed: () => _toggleFavorite(context),
+                onPressed: () => _toggleBookmark(context),
               );
             },
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Poster Besar di Tengah
-            Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  constraints: const BoxConstraints(maxHeight: 280),
-                  child: Image.network(
-                    movie.image,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      width: 180,
-                      height: 250,
-                      color: const Color(0xFF1A1F2C),
-                      child: const Icon(Icons.broken_image, size: 60, color: Colors.grey),
-                    ),
+            // Gambar Berita
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                width: double.infinity,
+                constraints: const BoxConstraints(maxHeight: 260),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1F2C),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: news.imageUrl.isNotEmpty
+                    ? Image.network(
+                        news.imageUrl,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          height: 200,
+                          color: const Color(0xFF1A1F2C),
+                          child: const Center(
+                            child: Icon(Icons.broken_image, size: 64, color: Colors.grey),
+                          ),
+                        ),
+                      )
+                    : Container(
+                        height: 200,
+                        color: const Color(0xFF1A1F2C),
+                        child: const Center(
+                          child: Icon(Icons.newspaper, size: 64, color: Colors.grey),
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Sumber Berita (News Site) Badge
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.public_rounded, size: 14, color: Colors.amber),
+                      const SizedBox(width: 5),
+                      Text(
+                        news.newsSite,
+                        style: const TextStyle(
+                          color: Colors.amber,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
+                const Spacer(),
+
+                // Tanggal Publikasi
+                Row(
+                  children: [
+                    const Icon(Icons.access_time_rounded, size: 14, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text(
+                      news.formattedPublishedDate,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ],
             ),
+            const SizedBox(height: 12),
 
-            const SizedBox(height: 20),
-
-            // Judul Film
+            // Judul Berita
             Text(
-              movie.title,
+              news.title,
               style: const TextStyle(
-                fontSize: 24,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
+                height: 1.3,
               ),
             ),
+            const SizedBox(height: 12),
 
-            const SizedBox(height: 10),
-
-            // Row Info Cepat (Rating, Durasi, Bahasa)
+            // Penulis Berita
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: const Color(0xFF1A1F2C),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.white10),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildQuickInfo(Icons.star, Colors.amber, 'Rating', movie.rating),
-                  _buildDivider(),
-                  _buildQuickInfo(Icons.timer_outlined, Colors.blueAccent, 'Durasi', movie.duration),
-                  _buildDivider(),
-                  _buildQuickInfo(Icons.language, Colors.greenAccent, 'Bahasa', movie.language),
+                  const CircleAvatar(
+                    radius: 18,
+                    backgroundColor: Color(0xFF252D3F),
+                    child: Icon(Icons.person_outline_rounded, color: Colors.amber, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Penulis / Author',
+                          style: TextStyle(fontSize: 11, color: Colors.grey),
+                        ),
+                        Text(
+                          news.authorDisplay,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
-
-            const SizedBox(height: 16),
-
-            // Genre Chips
-            const Text(
-              'Genre',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.amber),
-            ),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: movie.genre.map((g) {
-                return Chip(
-                  label: Text(g),
-                  backgroundColor: const Color(0xFF1E2433),
-                  labelStyle: const TextStyle(color: Colors.white70, fontSize: 12),
-                  side: const BorderSide(color: Colors.white12),
-                );
-              }).toList(),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Sutradara & Rilis
-            _buildInfoRow('Sutradara', movie.director),
-            _buildInfoRow('Tanggal Rilis', movie.releaseDate),
-
-            const Divider(color: Colors.white12, height: 28),
-
-            // Sinopsis
-            const Text(
-              'Sinopsis',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.amber),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              movie.description,
-              style: const TextStyle(fontSize: 14, height: 1.5, color: Colors.white70),
-            ),
-
             const SizedBox(height: 20),
 
-            // Pemeran / Casts
-            if (movie.casts.isNotEmpty) ...[
-              const Text(
-                'Pemeran (Casts)',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.amber),
+            // Ringkasan Berita (Summary)
+            const Text(
+              'Ringkasan Berita',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.amber,
               ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: movie.casts.map((actor) {
-                  return Chip(
-                    avatar: const CircleAvatar(
-                      backgroundColor: Colors.amber,
-                      child: Icon(Icons.person, size: 14, color: Colors.black),
-                    ),
-                    label: Text(actor),
-                    backgroundColor: const Color(0xFF1A1F2C),
-                    labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
-                    side: const BorderSide(color: Colors.white12),
-                  );
-                }).toList(),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A1F2C),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white10),
               ),
-            ],
-
+              child: Text(
+                news.summary.trim().isNotEmpty
+                    ? news.summary.trim()
+                    : 'Tidak ada ringkasan yang tersedia untuk artikel ini.',
+                style: const TextStyle(
+                  fontSize: 14,
+                  height: 1.6,
+                  color: Colors.white70,
+                ),
+              ),
+            ),
             const SizedBox(height: 28),
 
-            // Tombol Toggle Favorit Bawah
-            ValueListenableBuilder<Set<String>>(
-              valueListenable: FavoriteService.favoriteIdsNotifier,
-              builder: (context, favIds, _) {
-                final isFav = favIds.contains(movie.id);
-                return SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton.icon(
-                    onPressed: () => _toggleFavorite(context),
-                    icon: Icon(
-                      isFav ? Icons.favorite : Icons.favorite_border,
-                      color: isFav ? Colors.red : Colors.black,
-                    ),
-                    label: Text(
-                      isFav ? 'HAPUS DARI FAVORIT' : 'TAMBAH KE FAVORIT',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isFav ? const Color(0xFF2A1F24) : Colors.amber,
-                      foregroundColor: isFav ? Colors.red : Colors.black,
-                      side: isFav ? const BorderSide(color: Colors.red) : BorderSide.none,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
+            // Tombol Read Full Article
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber,
+                  foregroundColor: Colors.black,
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                );
-              },
+                ),
+                icon: const Icon(Icons.open_in_browser_rounded, size: 22),
+                label: const Text(
+                  'Read Full Article',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                onPressed: () => _openFullArticle(context),
+              ),
             ),
-
             const SizedBox(height: 20),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildQuickInfo(IconData icon, Color iconColor, String title, String value) {
-    return Column(
-      children: [
-        Icon(icon, color: iconColor, size: 18),
-        const SizedBox(height: 4),
-        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-        Text(title, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-      ],
-    );
-  }
-
-  Widget _buildDivider() {
-    return Container(width: 1, height: 30, color: Colors.white10);
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-          ),
-          const Text(': ', style: TextStyle(color: Colors.grey)),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 13),
-            ),
-          ),
-        ],
       ),
     );
   }

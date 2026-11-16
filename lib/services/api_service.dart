@@ -1,16 +1,34 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/movie.dart';
+import '../models/news.dart';
 
 class ApiService {
-  static const String baseUrl = 'https://681388b3129f6313e2119693.mockapi.io/api/v1';
+  static const String baseUrl = 'https://api.spaceflightnewsapi.net/v4';
 
-  // Mengambil daftar film dengan opsi filter genre & search judul
-  static Future<List<Movie>> getMovies({
-    String? genre,
+  // Mengambil daftar berita luar angkasa dengan opsi filter news_site & pencarian
+  static Future<List<News>> getNews({
+    String? newsSite,
     String? search,
+    int limit = 20,
+    int offset = 0,
   }) async {
-    final uri = Uri.parse('$baseUrl/movie');
+    final queryParams = <String, String>{
+      'limit': limit.toString(),
+      'offset': offset.toString(),
+    };
+
+    if (newsSite != null &&
+        newsSite.isNotEmpty &&
+        newsSite.toLowerCase() != 'all' &&
+        newsSite.toLowerCase() != 'semua') {
+      queryParams['news_site'] = newsSite;
+    }
+
+    if (search != null && search.trim().isNotEmpty) {
+      queryParams['search'] = search.trim();
+    }
+
+    final uri = Uri.parse('$baseUrl/articles/').replace(queryParameters: queryParams);
 
     try {
       final response = await http.get(uri).timeout(const Duration(seconds: 15));
@@ -19,56 +37,62 @@ class ApiService {
         final dynamic decoded = jsonDecode(response.body);
 
         List results = [];
-        if (decoded is List) {
+        if (decoded is Map<String, dynamic>) {
+          results = decoded['results'] ?? [];
+        } else if (decoded is List) {
           results = decoded;
-        } else if (decoded is Map<String, dynamic>) {
-          results = decoded['results'] ?? decoded['data'] ?? [];
         }
 
-        List<Movie> movies = results.map((item) => Movie.fromJson(item)).toList();
-
-        // Filter genre (client-side filter aman & akurat untuk MockAPI)
-        if (genre != null && genre.isNotEmpty && genre.toLowerCase() != 'all') {
-          movies = movies.where((m) {
-            return m.genre.any((g) => g.toLowerCase() == genre.toLowerCase());
-          }).toList();
-        }
-
-        // Search judul
-        if (search != null && search.trim().isNotEmpty) {
-          final query = search.trim().toLowerCase();
-          movies = movies.where((m) {
-            return m.title.toLowerCase().contains(query);
-          }).toList();
-        }
-
-        return movies;
+        return results.map((item) => News.fromJson(item)).toList();
       } else {
-        throw Exception('Gagal memuat film (Status code: ${response.statusCode})');
+        throw Exception('Gagal memuat berita luar angkasa (Kode status: ${response.statusCode})');
       }
     } catch (e) {
       if (e is FormatException) {
-        throw Exception('Format data tidak valid');
+        throw Exception('Format data respon tidak valid');
       }
       rethrow;
     }
   }
 
-  // Mengambil detail film berdasarkan ID
-  static Future<Movie> getMovieDetail(String id) async {
-    final uri = Uri.parse('$baseUrl/movie/$id');
+  // Alias getArticles
+  static Future<List<News>> getArticles({
+    String? newsSite,
+    String? search,
+    int limit = 20,
+  }) =>
+      getNews(newsSite: newsSite, search: search, limit: limit);
 
+  // Mengambil daftar sumber publikasi (news sites) dari endpoint info
+  static Future<List<String>> getNewsSites() async {
+    final uri = Uri.parse('$baseUrl/info/');
     try {
-      final response = await http.get(uri).timeout(const Duration(seconds: 15));
-
+      final response = await http.get(uri).timeout(const Duration(seconds: 8));
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
-        return Movie.fromJson(data);
-      } else {
-        throw Exception('Film tidak ditemukan (Status code: ${response.statusCode})');
+        final List sites = data['news_sites'] ?? [];
+        final list = sites.map((e) => e.toString()).toList();
+        if (list.isNotEmpty) {
+          return list;
+        }
       }
-    } catch (e) {
-      rethrow;
+    } catch (_) {
+      // Fallback list jika koneksi offline/timeout
     }
+
+    return [
+      'NASA',
+      'SpaceNews',
+      'Space.com',
+      'Spaceflight Now',
+      'Arstechnica',
+      'Teslarati',
+      'ESA',
+      'SpaceX',
+      'Blue Origin',
+      'European Spaceflight',
+      'The Verge',
+      'CNBC',
+    ];
   }
 }

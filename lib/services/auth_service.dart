@@ -92,12 +92,18 @@ class AuthService {
     return prefs.getBool(_keyIsLoggedIn) ?? false;
   }
 
+  // Ambil info username aktif
+  static Future<String> getUsername() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyUsername) ?? 'User';
+  }
+
   // Ambil info user aktif
   static Future<Map<String, String>> getCurrentUserInfo() async {
     final prefs = await SharedPreferences.getInstance();
     return {
       'username': prefs.getString(_keyUsername) ?? 'User',
-      'fullName': prefs.getString(_keyFullName) ?? 'Movie Enthusiast',
+      'fullName': prefs.getString(_keyFullName) ?? 'Space Explorer',
     };
   }
 

@@ -102,8 +102,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    'Lengkapi formulir di bawah untuk mendaftar',
-                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                    'Bergabung dan jelajahi kabar luar angkasa',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                   const SizedBox(height: 24),
 
@@ -117,6 +117,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(22),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Nama Lengkap
                           TextFormField(
@@ -132,6 +133,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide.none,
                               ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(color: Colors.white10),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(color: Colors.amber, width: 1.5),
+                              ),
                             ),
                             validator: (val) {
                               if (val == null || val.trim().isEmpty) {
@@ -140,7 +149,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 16),
 
                           // Username
                           TextFormField(
@@ -156,15 +165,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide.none,
                               ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(color: Colors.white10),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(color: Colors.amber, width: 1.5),
+                              ),
                             ),
                             validator: (val) {
                               if (val == null || val.trim().isEmpty) {
                                 return 'Username tidak boleh kosong';
                               }
+                              if (val.trim().length < 3) {
+                                return 'Username minimal 3 karakter';
+                              }
                               return null;
                             },
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 16),
 
                           // Password
                           TextFormField(
@@ -192,18 +212,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide.none,
                               ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(color: Colors.white10),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(color: Colors.amber, width: 1.5),
+                              ),
                             ),
                             validator: (val) {
                               if (val == null || val.trim().isEmpty) {
                                 return 'Password tidak boleh kosong';
                               }
-                              if (val.length < 4) {
-                                return 'Password minimal 4 karakter';
+                              if (val.trim().length < 6) {
+                                return 'Password minimal 6 karakter';
                               }
                               return null;
                             },
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 16),
 
                           // Konfirmasi Password
                           TextFormField(
@@ -231,6 +259,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide.none,
                               ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(color: Colors.white10),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(color: Colors.amber, width: 1.5),
+                              ),
                             ),
                             validator: (val) {
                               if (val == null || val.trim().isEmpty) {
@@ -239,28 +275,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 22),
+                          const SizedBox(height: 24),
 
-                          // Tombol Daftar
+                          // Tombol Register
                           SizedBox(
                             width: double.infinity,
-                            height: 50,
+                            height: 48,
                             child: ElevatedButton(
-                              onPressed: _isLoading ? null : _register,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.amber[700],
+                                backgroundColor: Colors.amber,
                                 foregroundColor: Colors.black,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
+                              onPressed: _isLoading ? null : _register,
                               child: _isLoading
                                   ? const SizedBox(
-                                      width: 24,
-                                      height: 24,
+                                      height: 22,
+                                      width: 22,
                                       child: CircularProgressIndicator(
-                                        strokeWidth: 2.5,
                                         color: Colors.black,
+                                        strokeWidth: 2.5,
                                       ),
                                     )
                                   : const Text(
@@ -268,7 +304,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
-                                        letterSpacing: 1,
+                                        letterSpacing: 0.8,
                                       ),
                                     ),
                             ),
@@ -278,7 +314,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 22),
 
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -287,7 +323,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       GestureDetector(
                         onTap: () => Navigator.pop(context),
                         child: const Text(
-                          'Masuk di sini',
+                          'Masuk',
                           style: TextStyle(
                             color: Colors.amber,
                             fontWeight: FontWeight.bold,

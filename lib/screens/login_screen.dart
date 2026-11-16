@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import 'home_screen.dart';
 import 'register_screen.dart';
-import 'main_navigation_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -62,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -99,18 +99,25 @@ class _LoginScreenState extends State<LoginScreen> {
                       shape: BoxShape.circle,
                       color: const Color(0xFF1E2433),
                       border: Border.all(color: Colors.amber, width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.amber.withValues(alpha: 0.2),
+                          blurRadius: 16,
+                          spreadRadius: 2,
+                        ),
+                      ],
                     ),
                     child: const Icon(
-                      Icons.movie_filter_rounded,
-                      size: 50,
+                      Icons.rocket_launch_rounded,
+                      size: 46,
                       color: Colors.amber,
                     ),
                   ),
                   const SizedBox(height: 18),
                   const Text(
-                    'Movie Explorer',
+                    'SpaceNews Explorer',
                     style: TextStyle(
-                      fontSize: 30,
+                      fontSize: 28,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1.1,
                       color: Colors.white,
@@ -118,8 +125,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    'Katalog & Informasi Film',
-                    style: TextStyle(fontSize: 15, color: Colors.grey),
+                    'Eksplorasi Berita Luar Angkasa',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                   const SizedBox(height: 28),
 
@@ -139,19 +146,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           const Text(
                             'Masuk ke Akun',
                             style: TextStyle(
-                              fontSize: 20,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
                           ),
-                          const SizedBox(height: 6),
-                          const Text(
-                            'Masukkan username dan password Anda',
-                            style: TextStyle(fontSize: 13, color: Colors.grey),
-                          ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 18),
 
-                          // Username
+                          // Username Field
                           TextFormField(
                             controller: _usernameController,
                             style: const TextStyle(color: Colors.white),
@@ -165,6 +167,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide.none,
                               ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(color: Colors.white10),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(color: Colors.amber, width: 1.5),
+                              ),
                             ),
                             validator: (val) {
                               if (val == null || val.trim().isEmpty) {
@@ -175,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Password
+                          // Password Field
                           TextFormField(
                             controller: _passwordController,
                             obscureText: _obscurePassword,
@@ -201,6 +211,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide.none,
                               ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(color: Colors.white10),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(color: Colors.amber, width: 1.5),
+                              ),
                             ),
                             validator: (val) {
                               if (val == null || val.trim().isEmpty) {
@@ -211,27 +229,26 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 22),
 
-                          // Tombol Login
+                          // Submit Button
                           SizedBox(
                             width: double.infinity,
-                            height: 50,
+                            height: 48,
                             child: ElevatedButton(
-                              onPressed: _isLoading ? null : _login,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.amber[700],
+                                backgroundColor: Colors.amber,
                                 foregroundColor: Colors.black,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                elevation: 2,
                               ),
+                              onPressed: _isLoading ? null : _login,
                               child: _isLoading
                                   ? const SizedBox(
-                                      width: 24,
-                                      height: 24,
+                                      height: 22,
+                                      width: 22,
                                       child: CircularProgressIndicator(
-                                        strokeWidth: 2.5,
                                         color: Colors.black,
+                                        strokeWidth: 2.5,
                                       ),
                                     )
                                   : const Text(
@@ -239,30 +256,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
-                                        letterSpacing: 1,
+                                        letterSpacing: 0.8,
                                       ),
                                     ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 14),
-
-                          // Tombol Demo User
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: _fillDemoCredentials,
-                              icon: const Icon(Icons.flash_on, size: 18, color: Colors.amber),
-                              label: const Text(
-                                'Isi Akun Demo (sukuna)',
-                                style: TextStyle(color: Colors.amber),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: Colors.amber.withValues(alpha: 0.5)),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
                             ),
                           ),
                         ],
@@ -270,9 +266,27 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 18),
 
-                  // Link Register
+                  // Tombol Cepat Demo Sukuna
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.amber,
+                      backgroundColor: const Color(0xFF1A1F2C),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: const BorderSide(color: Colors.amber, width: 0.8),
+                      ),
+                    ),
+                    icon: const Icon(Icons.flash_on, size: 18),
+                    label: const Text('Isi Akun Demo (sukuna)'),
+                    onPressed: _fillDemoCredentials,
+                  ),
+
+                  const SizedBox(height: 22),
+
+                  // Navigasi ke Register
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -290,7 +304,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           );
                         },
                         child: const Text(
-                          'Daftar di sini',
+                          'Daftar Sekarang',
                           style: TextStyle(
                             color: Colors.amber,
                             fontWeight: FontWeight.bold,
